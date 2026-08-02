@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.db.session import reset_database
-from app.routers import auth, health
+from app.routers import auth, chat, health
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
@@ -20,7 +20,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(health.router, prefix="/api")
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-# PL-5 will add: app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 # PL-7 will add: app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 
 if STATIC_DIR.is_dir():
