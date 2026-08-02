@@ -12,9 +12,10 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    // Tests run against a production build, per Next.js's testing guide, so
-    // behavior matches what actually ships.
-    command: "npm run build && npm run start -- -p 3100",
+    // The app is statically exported (output: "export" in next.config.ts) and
+    // served by FastAPI in production, so tests serve the same `out/` build
+    // rather than running `next start` (which static exports don't support).
+    command: "npm run build && npx serve out -l 3100 -s --no-clipboard",
     url: "http://localhost:3100",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
