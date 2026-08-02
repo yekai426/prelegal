@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import type { ParsedStandardTerms } from "@/lib/parseStandardTerms";
 import { defaultFormData } from "@/lib/types";
-import { MndaForm } from "./MndaForm";
+import { ChatPanel } from "./ChatPanel";
 import { MndaPreview } from "./MndaPreview";
 
 const PdfDownloadButton = dynamic(
@@ -31,17 +31,8 @@ export function MndaCreator({
 
   return (
     <div className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-8 px-6 py-10 lg:grid-cols-2">
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-950 dark:text-white">
-            Mutual NDA Creator
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Fill in the details below. The document on the right updates live
-            and can be downloaded as a PDF.
-          </p>
-        </div>
-        <MndaForm value={formData} onChange={setFormData} />
+      <div className="flex h-[85vh] flex-col lg:sticky lg:top-10">
+        <ChatPanel formData={formData} onFieldsChange={setFormData} />
       </div>
 
       <div className="space-y-4 lg:sticky lg:top-10 lg:self-start">
