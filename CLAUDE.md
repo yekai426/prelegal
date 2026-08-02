@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-The current implementation supports one document type (Mutual NDA) via a manual form, not yet AI chat. A backend/auth foundation exists but user authentication and document persistence are not yet wired into the product. See "Implementation Status" below for what's actually built.
+The current implementation supports one document type (Mutual NDA) via a freeform AI chat (LiteLLM/OpenRouter/Cerebras). A backend/auth foundation exists but user authentication and document persistence are not yet wired into the product. See "Implementation Status" below for what's actually built.
 
 ## Development process
 
@@ -75,8 +75,14 @@ Backend available at http://localhost:8000
 - `scripts/{start,stop}-{mac,linux,windows}` to build/run/stop the container
 - **Not yet done**: the auth API isn't wired into the frontend (no login UI, no route gating) — this was deliberately out of scope per the ticket
 
+### Completed (PL-5)
+- Manual Mutual NDA form replaced by a freeform AI chat (`ChatPanel`, `frontend/lib/chat.ts`) — live preview and PDF download unchanged, still driven by the same `MndaFormData` state, now populated by chat extraction instead of form inputs
+- `GET /api/chat/greeting` (static, no LLM call) and `POST /api/chat/message` — stateless; the frontend resends full message history + current fields each turn, nothing chat-related persists server-side
+- Each chat turn is one combined LiteLLM structured-output call (`openrouter/openai/gpt-oss-120b` via Cerebras) returning a conversational reply + merged field state together
+- Backend document-type registry (`backend/app/services/chat/`) keeps the router/orchestrator/LLM client doc-agnostic, so PL-6 can add each remaining document type as a new schema + service file
+- LLM failures (rate limit/timeout/malformed output/provider down) map to distinct HTTP statuses instead of a generic 500
+
 ### Not yet built
-- AI chat interface for establishing document type/fields
 - Support for the other 10 document types beyond Mutual NDA
 - Document persistence (save/load/delete)
 - Frontend auth UI (login/signup pages, session-aware UI)
