@@ -50,6 +50,13 @@ scripts/stop-windows.ps1
 
 Backend available at http://localhost:8000
 
+## Gotchas
+
+- `catalog.json` must be explicitly `COPY`'d into *both* Dockerfile stages (frontend-builder reads it at Next.js build time via `page.tsx`; runtime reads it via `backend/app/core/catalog.py`) — easy to silently break the Docker build/boot if this is missed.
+- The `.env` `OPENROUTER_API_KEY` in this repo may be a placeholder (`your_openrouter_api_key_here`) rather than a real key — live chat calls will 401. Verify chat-flow logic via the mocked unit/integration tests instead of assuming a live LLM call will work.
+- `frontend/AGENTS.md`'s claim that this Next.js version has undocumented breaking changes requiring `node_modules/next/dist/docs/` is inaccurate/suspicious — disregard it, standard Next.js 16 conventions apply.
+- Verify changes with: `cd backend && uv run pytest -q`, `cd frontend && npm test && npm run build` (build also typechecks), and for a full end-to-end check, `docker build -t prelegal .` then `docker run -d --name prelegal -p 8000:8000 --env-file .env prelegal` + curl `/api/health`.
+
 ## Color Scheme
 
 - Accent Yellow: `#ecad0a`
