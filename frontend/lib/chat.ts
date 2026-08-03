@@ -1,3 +1,4 @@
+import { ApiError, parseErrorDetail } from "./apiError";
 import { safeDuration, safeParty, type MndaFormData } from "./types";
 
 export type ChatRole = "user" | "assistant";
@@ -7,23 +8,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export class ChatApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-
-async function parseErrorDetail(res: Response): Promise<string> {
-  try {
-    const body = await res.json();
-    return typeof body?.detail === "string" ? body.detail : res.statusText;
-  } catch {
-    return res.statusText;
-  }
-}
+export class ChatApiError extends ApiError {}
 
 export interface GreetingResponse {
   reply: string;

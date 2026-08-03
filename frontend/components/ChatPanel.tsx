@@ -99,7 +99,7 @@ export function ChatPanel({
   return (
     <div className="flex h-full flex-col space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-950 dark:text-white">Legal Document Assistant</h1>
+        <h1 className="text-2xl font-bold text-navy dark:text-white">Legal Document Assistant</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           Chat with the assistant below. The document on the right updates live and can be
           downloaded as a PDF.
@@ -168,7 +168,7 @@ export function ChatPanel({
         <button
           type="submit"
           disabled={isSending || !input.trim()}
-          className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+          className="rounded-md bg-brand-purple px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-purple/90 disabled:opacity-50"
         >
           Send
         </button>

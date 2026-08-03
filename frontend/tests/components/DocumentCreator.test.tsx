@@ -13,6 +13,10 @@ vi.mock("@/components/ChatPanel", () => ({
   },
 }));
 
+vi.mock("@/components/SaveDocumentButton", () => ({
+  SaveDocumentButton: () => <div data-testid="save-document-button-stub" />,
+}));
+
 function makeTurn(overrides: Partial<ChatTurnResponse> = {}): ChatTurnResponse {
   return {
     reply: "ok",

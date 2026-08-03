@@ -8,6 +8,7 @@ import {
   modificationsText,
   purposeText,
 } from "@/lib/coverPageText";
+import { DRAFT_DISCLAIMER } from "@/lib/disclaimer";
 import type { ParsedStandardTerms } from "@/lib/parseStandardTerms";
 import { parseRichText } from "@/lib/richText";
 import type { MndaFormData } from "@/lib/types";
@@ -171,6 +172,7 @@ export function MndaPdfDocument({
         ))}
 
         <PdfRichText style={styles.attribution} text={standardTerms.attribution} />
+        <Text style={styles.attribution}>{DRAFT_DISCLAIMER}</Text>
       </Page>
     </Document>
   );

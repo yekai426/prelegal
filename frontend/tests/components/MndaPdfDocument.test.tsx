@@ -2,6 +2,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { PDFParse } from "pdf-parse";
 import { describe, expect, it } from "vitest";
 import { MndaPdfDocument } from "@/components/pdf/MndaPdfDocument";
+import { DRAFT_DISCLAIMER } from "@/lib/disclaimer";
 import type { ParsedStandardTerms } from "@/lib/parseStandardTerms";
 import { defaultFormData } from "@/lib/types";
 
@@ -48,5 +49,19 @@ describe("MndaPdfDocument", () => {
     // syntax should NOT survive for this text, unlike user-supplied fields.
     expect(text).not.toContain("[CC BY 4.0]");
     expect(text).toContain("CC BY 4.0");
+  });
+
+  it("includes the draft disclaimer in the generated PDF", async () => {
+    const buffer = await renderToBuffer(
+      <MndaPdfDocument formData={defaultFormData()} standardTerms={STANDARD_TERMS} />,
+    );
+    const parser = new PDFParse({ data: buffer });
+    const { text } = await parser.getText();
+    await parser.destroy();
+
+    // Normalize whitespace: the PDF renderer may wrap the disclaimer across
+    // a line break, turning an inter-word space into a newline in the
+    // extracted text.
+    expect(text.replace(/\s+/g, " ")).toContain(DRAFT_DISCLAIMER);
   });
 });

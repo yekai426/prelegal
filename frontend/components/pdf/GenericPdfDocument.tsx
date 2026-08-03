@@ -1,6 +1,7 @@
 import { Document, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { Style } from "@react-pdf/types";
 import type { DocumentTypeMeta } from "@/lib/documentRegistry";
+import { DRAFT_DISCLAIMER } from "@/lib/disclaimer";
 import { formatFieldValue, type GenericFields } from "@/lib/genericFields";
 import type { ParsedStandardTerms } from "@/lib/parseStandardTerms";
 import { parseRichText } from "@/lib/richText";
@@ -132,6 +133,7 @@ export function GenericPdfDocument({
         {standardTerms.attribution && (
           <PdfRichText style={styles.attribution} text={standardTerms.attribution} />
         )}
+        <Text style={styles.attribution}>{DRAFT_DISCLAIMER}</Text>
       </Page>
     </Document>
   );

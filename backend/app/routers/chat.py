@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.catalog import catalog_by_key
+from app.core.catalog import label_for
 from app.core.config import Settings, get_settings
 from app.schemas.chat import ChatGreetingResponse, ChatRequest, ChatResponse
 from app.services import chat_service
@@ -17,10 +17,7 @@ router = APIRouter()
 
 
 def _label(document_type: str | None) -> str | None:
-    if document_type is None:
-        return None
-    entry = catalog_by_key().get(document_type)
-    return entry.name if entry else None
+    return label_for(document_type) if document_type is not None else None
 
 
 @router.get("/greeting", response_model=ChatGreetingResponse)

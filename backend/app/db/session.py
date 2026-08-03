@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import get_settings
 from app.db.base import Base
 # Import models so they're registered on Base.metadata before create_all runs.
-from app.models import user  # noqa: F401
+from app.models import document, user  # noqa: F401
 
 _SQLITE_PREFIX = "sqlite:///"
 

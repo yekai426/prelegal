@@ -6,6 +6,7 @@ import {
   modificationsText,
   purposeText,
 } from "@/lib/coverPageText";
+import { DRAFT_DISCLAIMER } from "@/lib/disclaimer";
 import type { ParsedStandardTerms } from "@/lib/parseStandardTerms";
 import type { MndaFormData } from "@/lib/types";
 import { RichText } from "./RichText";
@@ -20,13 +21,13 @@ export function MndaPreview({
   return (
     <article className="space-y-8 text-sm leading-6 text-zinc-800 dark:text-zinc-200">
       <header className="text-center">
-        <h1 className="text-xl font-bold text-zinc-950 dark:text-white">
+        <h1 className="text-xl font-bold text-navy dark:text-white">
           Mutual Non-Disclosure Agreement
         </h1>
       </header>
 
       <section className="space-y-3">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <h2 className="text-base font-semibold text-navy dark:text-white">
           Cover Page
         </h2>
         <p>
@@ -64,7 +65,7 @@ export function MndaPreview({
               key={label}
               className="space-y-1 rounded-md border border-zinc-200 p-4 dark:border-zinc-800"
             >
-              <h3 className="font-semibold text-zinc-950 dark:text-white">
+              <h3 className="font-semibold text-navy dark:text-white">
                 {label}
               </h3>
               <p>Signature: ____________________________</p>
@@ -79,7 +80,7 @@ export function MndaPreview({
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <h2 className="text-base font-semibold text-navy dark:text-white">
           {standardTerms.title}
         </h2>
         {standardTerms.sections.map((section) => (
@@ -90,8 +91,9 @@ export function MndaPreview({
         ))}
       </section>
 
-      <footer className="text-xs text-zinc-500 dark:text-zinc-400">
+      <footer className="space-y-2 text-xs text-zinc-500 dark:text-zinc-400">
         <RichText text={standardTerms.attribution} />
+        <p className="italic">{DRAFT_DISCLAIMER}</p>
       </footer>
     </article>
   );

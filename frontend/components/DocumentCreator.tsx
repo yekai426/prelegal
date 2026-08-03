@@ -1,36 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState } from "react";
 import type { ChatTurnResponse } from "@/lib/chat";
-import { documentRegistry } from "@/lib/documentRegistry";
 import { defaultFieldsForType, mergeFieldsForType, type DocumentFields } from "@/lib/documentState";
-import type { GenericFields } from "@/lib/genericFields";
 import type { ParsedStandardTerms } from "@/lib/parseStandardTerms";
-import type { MndaFormData } from "@/lib/types";
 import { ChatPanel } from "./ChatPanel";
-import { GenericPreview } from "./GenericPreview";
-import { MndaPreview } from "./MndaPreview";
-
-const PdfDownloadButton = dynamic(
-  () => import("@/components/pdf/PdfDownloadButton").then((mod) => mod.PdfDownloadButton),
-  {
-    ssr: false,
-    loading: () => (
-      <span className="text-sm text-zinc-500 dark:text-zinc-400">Loading PDF engine…</span>
-    ),
-  },
-);
-
-const GenericPdfDownloadButton = dynamic(
-  () => import("@/components/pdf/GenericPdfDownloadButton").then((mod) => mod.GenericPdfDownloadButton),
-  {
-    ssr: false,
-    loading: () => (
-      <span className="text-sm text-zinc-500 dark:text-zinc-400">Loading PDF engine…</span>
-    ),
-  },
-);
+import { DocumentPreview } from "./DocumentPreview";
+import { DocumentPdfButton } from "./pdf/DocumentPdfButton";
+import { SaveDocumentButton } from "./SaveDocumentButton";
 
 export function DocumentCreator({
   standardTermsByType,
@@ -64,19 +41,13 @@ export function DocumentCreator({
 
       <div className="space-y-4 lg:sticky lg:top-10 lg:self-start">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-zinc-950 dark:text-white">Preview</h2>
-          {documentType === "mutual_nda" && (
-            <PdfDownloadButton
-              formData={fields as MndaFormData}
-              standardTerms={standardTermsByType.mutual_nda}
-            />
-          )}
-          {documentType && documentType !== "mutual_nda" && (
-            <GenericPdfDownloadButton
-              documentTypeLabel={documentTypeLabels[documentType] ?? documentType}
-              fields={fields as GenericFields}
-              meta={documentRegistry[documentType]}
-              standardTerms={standardTermsByType[documentType]}
+          <h2 className="text-lg font-semibold text-navy dark:text-white">Preview</h2>
+          {documentType && (
+            <DocumentPdfButton
+              documentType={documentType}
+              fields={fields}
+              standardTermsByType={standardTermsByType}
+              documentTypeLabels={documentTypeLabels}
             />
           )}
         </div>
@@ -86,18 +57,16 @@ export function DocumentCreator({
               Once we know what document you need, a preview will appear here.
             </p>
           )}
-          {documentType === "mutual_nda" && (
-            <MndaPreview formData={fields as MndaFormData} standardTerms={standardTermsByType.mutual_nda} />
-          )}
-          {documentType && documentType !== "mutual_nda" && (
-            <GenericPreview
-              documentTypeLabel={documentTypeLabels[documentType] ?? documentType}
-              fields={fields as GenericFields}
-              meta={documentRegistry[documentType]}
-              standardTerms={standardTermsByType[documentType]}
+          {documentType && (
+            <DocumentPreview
+              documentType={documentType}
+              fields={fields}
+              standardTermsByType={standardTermsByType}
+              documentTypeLabels={documentTypeLabels}
             />
           )}
         </div>
+        {documentType && <SaveDocumentButton documentType={documentType} fields={fields} />}
       </div>
     </div>
   );

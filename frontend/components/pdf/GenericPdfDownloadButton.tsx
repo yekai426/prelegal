@@ -28,7 +28,7 @@ export function GenericPdfDownloadButton({
         />
       }
       fileName={meta.pdfFileName}
-      className="inline-flex items-center justify-center rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+      className="inline-flex items-center justify-center rounded-full bg-brand-purple px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-purple/90"
     >
       {({ loading }) => (loading ? "Preparing PDF…" : "Download PDF")}
     </PDFDownloadLink>
