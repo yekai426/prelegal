@@ -69,3 +69,62 @@ describe("parseStandardTerms (real templates/Mutual-NDA.md)", () => {
     expect(parsed.attribution).toContain("[Version 1.0]");
   });
 });
+
+describe("parseStandardTerms (real templates/CSA.md — nested numbering)", () => {
+  // CSA.md uses hierarchical numbering (nested header_3 sub-clauses inside
+  // each top-level header_2 section) — regression guard for a bug where
+  // trimming indentation before matching caused nested items to be
+  // misparsed as false top-level sections.
+  const raw = fs.readFileSync(path.join(process.cwd(), "..", "templates", "CSA.md"), "utf-8");
+  const parsed = parseStandardTerms(raw);
+
+  it("parses exactly the 13 real top-level sections, not the nested sub-clauses", () => {
+    expect(parsed.sections).toHaveLength(13);
+    expect(parsed.sections.map((s) => s.number)).toEqual(
+      Array.from({ length: 13 }, (_, i) => String(i + 1)),
+    );
+  });
+
+  it("folds nested sub-clauses into their parent section's body", () => {
+    const service = parsed.sections[0];
+    expect(service.body).toContain("Access and Use");
+    expect(service.body).toContain("Support");
+    expect(service.body).toContain("Machine Learning");
+  });
+
+  it("has no template with a CC-BY footer, so nothing is swallowed as attribution", () => {
+    expect(parsed.attribution).toBe("");
+  });
+
+  it("does not lose the last Definitions entry to a false attribution match", () => {
+    const definitions = parsed.sections[parsed.sections.length - 1];
+    expect(definitions.body).toContain("Variable");
+  });
+
+  it("strips all span tags, including the malformed doubled closing tag", () => {
+    for (const section of parsed.sections) {
+      expect(section.body).not.toContain("<span");
+      expect(section.body).not.toContain("</span");
+    }
+  });
+});
+
+describe("parseStandardTerms (real templates/DPA.md — no cover-page-style parties)", () => {
+  const raw = fs.readFileSync(path.join(process.cwd(), "..", "templates", "DPA.md"), "utf-8");
+  const parsed = parseStandardTerms(raw);
+
+  it("parses exactly the 11 real top-level sections", () => {
+    expect(parsed.sections).toHaveLength(11);
+  });
+
+  it("has no CC-BY footer, so nothing is swallowed as attribution", () => {
+    expect(parsed.attribution).toBe("");
+  });
+
+  it("strips all keyterms_link spans into bold text with no leaked HTML", () => {
+    for (const section of parsed.sections) {
+      expect(section.body).not.toContain("<span");
+    }
+    expect(parsed.sections[1].body).toContain("**Customer**");
+  });
+});

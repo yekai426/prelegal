@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-The current implementation supports one document type (Mutual NDA) via a freeform AI chat (LiteLLM/OpenRouter/Cerebras). A backend/auth foundation exists but user authentication and document persistence are not yet wired into the product. See "Implementation Status" below for what's actually built.
+The current implementation supports all 11 catalog document types via a freeform AI chat (LiteLLM/OpenRouter/Cerebras), which also handles requests for unsupported documents by suggesting the closest catalog match. A backend/auth foundation exists but user authentication and document persistence are not yet wired into the product. See "Implementation Status" below for what's actually built.
 
 ## Development process
 
@@ -82,7 +82,12 @@ Backend available at http://localhost:8000
 - Backend document-type registry (`backend/app/services/chat/`) keeps the router/orchestrator/LLM client doc-agnostic, so PL-6 can add each remaining document type as a new schema + service file
 - LLM failures (rate limit/timeout/malformed output/provider down) map to distinct HTTP statuses instead of a generic 500
 
+### Completed (PL-6)
+- Backend registry now covers all 11 catalog document types (Mutual NDA plus CSA, PSA, SLA, DPA, BAA, AI Addendum, Design Partner Agreement, Pilot Agreement, Partnership Agreement, Software License Agreement) — each is a schema + service file registered via `backend/app/services/chat/`, driven off `backend/app/core/catalog.py`
+- A classifier (`backend/app/services/chat/classifier.py`) picks the document type from the user's first message, or — if the request doesn't match any catalog type — replies plainly and suggests the closest match for a "Did you mean X?" prompt; the same suggestion mechanism also works mid-conversation once a document type is already selected
+- Frontend: `DocumentCreator`/`ChatPanel` render the "Did you mean X?" suggestion and resend the conversation forced to that type on click; Mutual NDA keeps its original bespoke preview/PDF path, while the other 10 types share one generic path (`documentRegistry.ts`, `GenericPreview`, `GenericPdfDocument`) driven by field metadata mirroring each backend service's field guide
+- Mid-conversation document-type flips (user changes their mind partway through) are supported and carry over shared cover-page fields automatically
+
 ### Not yet built
-- Support for the other 10 document types beyond Mutual NDA
 - Document persistence (save/load/delete)
 - Frontend auth UI (login/signup pages, session-aware UI)

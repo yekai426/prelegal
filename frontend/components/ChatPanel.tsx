@@ -1,39 +1,44 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChatApiError, fetchGreeting, sendChatMessage, type ChatMessage } from "@/lib/chat";
-import type { MndaFormData } from "@/lib/types";
+import { ChatApiError, fetchGreeting, sendChatMessage, type ChatMessage, type ChatTurnResponse } from "@/lib/chat";
+import type { DocumentFields } from "@/lib/documentState";
 
 const inputClasses =
   "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 disabled:opacity-50";
 
+interface Suggestion {
+  type: string;
+  label: string;
+}
+
 export function ChatPanel({
-  formData,
-  onFieldsChange,
+  documentType,
+  fields,
+  onTurnResult,
 }: {
-  formData: MndaFormData;
-  onFieldsChange: (next: MndaFormData) => void;
+  documentType: string | null;
+  fields: DocumentFields;
+  onTurnResult: (result: ChatTurnResponse) => void;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastForcedDocumentTypeRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
-    fetchGreeting()
-      .then((reply) => {
+    fetchGreeting(null)
+      .then(({ reply }) => {
         if (!cancelled) setMessages([{ role: "assistant", content: reply }]);
       })
       .catch(() => {
         if (!cancelled) {
           setMessages([
-            {
-              role: "assistant",
-              content:
-                "Hi! I can help you put together a Mutual NDA — what would you like to start with?",
-            },
+            { role: "assistant", content: "Hi! What kind of legal document would you like to create?" },
           ]);
         }
       });
@@ -42,13 +47,22 @@ export function ChatPanel({
     };
   }, []);
 
-  async function sendAndHandle(history: ChatMessage[]) {
+  async function sendAndHandle(history: ChatMessage[], forcedDocumentType?: string) {
+    lastForcedDocumentTypeRef.current = forcedDocumentType;
     setError(null);
     setIsSending(true);
     try {
-      const result = await sendChatMessage(history, formData);
+      const result = await sendChatMessage(history, fields, forcedDocumentType ?? documentType);
       setMessages([...history, { role: "assistant", content: result.reply }]);
-      onFieldsChange(result.fields);
+      setSuggestion(
+        result.suggestedDocumentType
+          ? {
+              type: result.suggestedDocumentType,
+              label: result.suggestedDocumentTypeLabel ?? result.suggestedDocumentType,
+            }
+          : null,
+      );
+      onTurnResult(result);
     } catch (err) {
       setError(
         err instanceof ChatApiError
@@ -74,15 +88,18 @@ export function ChatPanel({
 
   async function handleRetry() {
     if (isSending) return;
-    // Resend the same message history — the last user message is already in
-    // `messages`, so this doesn't re-append it.
-    await sendAndHandle(messages);
+    await sendAndHandle(messages, lastForcedDocumentTypeRef.current);
+  }
+
+  async function handleSuggestionClick() {
+    if (!suggestion || isSending) return;
+    await sendAndHandle(messages, suggestion.type);
   }
 
   return (
     <div className="flex h-full flex-col space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-950 dark:text-white">Mutual NDA Creator</h1>
+        <h1 className="text-2xl font-bold text-zinc-950 dark:text-white">Legal Document Assistant</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           Chat with the assistant below. The document on the right updates live and can be
           downloaded as a PDF.
@@ -110,6 +127,19 @@ export function ChatPanel({
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Thinking…</p>
         )}
       </div>
+
+      {suggestion && (
+        <div className="rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+          <button
+            type="button"
+            onClick={handleSuggestionClick}
+            disabled={isSending}
+            className="font-medium underline disabled:opacity-50"
+          >
+            Did you mean {suggestion.label}?
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">

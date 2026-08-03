@@ -7,6 +7,7 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
 COPY templates/ /app/templates/
+COPY catalog.json /app/catalog.json
 RUN npm run build
 # next.config.ts sets output: "export" -> emits /app/frontend/out
 
@@ -27,6 +28,7 @@ RUN useradd --create-home --uid 999 prelegal
 WORKDIR /app/backend
 COPY --from=backend-builder /app/backend /app/backend
 COPY --from=frontend-builder /app/frontend/out /app/backend/static
+COPY catalog.json /app/catalog.json
 RUN mkdir -p /app/backend/data && chown -R prelegal:prelegal /app/backend
 
 ENV PATH="/app/backend/.venv/bin:$PATH" PYTHONUNBUFFERED=1

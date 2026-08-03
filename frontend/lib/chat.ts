@@ -1,4 +1,4 @@
-import { clampDuration, type MndaFormData } from "./types";
+import { safeDuration, safeParty, type MndaFormData } from "./types";
 
 export type ChatRole = "user" | "assistant";
 
@@ -25,18 +25,43 @@ async function parseErrorDetail(res: Response): Promise<string> {
   }
 }
 
-export async function fetchGreeting(documentType = "mutual_nda"): Promise<string> {
-  const res = await fetch(`/api/chat/greeting?document_type=${documentType}`);
-  if (!res.ok) throw new ChatApiError(res.status, await parseErrorDetail(res));
-  const body = await res.json();
-  return body.reply;
+export interface GreetingResponse {
+  reply: string;
+  documentType: string | null;
 }
 
+export interface ChatTurnResponse {
+  reply: string;
+  fields: unknown;
+  documentType: string | null;
+  documentTypeLabel: string | null;
+  suggestedDocumentType: string | null;
+  suggestedDocumentTypeLabel: string | null;
+}
+
+/**
+ * documentType is null until the assistant has determined (or the caller
+ * already knows) which catalog document type is being drafted.
+ */
+export async function fetchGreeting(documentType: string | null = null): Promise<GreetingResponse> {
+  const query = documentType ? `?document_type=${encodeURIComponent(documentType)}` : "";
+  const res = await fetch(`/api/chat/greeting${query}`);
+  if (!res.ok) throw new ChatApiError(res.status, await parseErrorDetail(res));
+  const body = await res.json();
+  return { reply: body.reply, documentType: body.document_type ?? null };
+}
+
+/**
+ * Returns the RAW server response — merging the returned fields onto
+ * previous state is the caller's job, since the correct merge strategy
+ * (mergeFields for Mutual NDA, mergeGenericFields for everything else)
+ * depends on which document type the response settles on.
+ */
 export async function sendChatMessage(
   messages: ChatMessage[],
-  fields: MndaFormData,
-  documentType = "mutual_nda",
-): Promise<{ reply: string; fields: MndaFormData }> {
+  fields: unknown,
+  documentType: string | null,
+): Promise<ChatTurnResponse> {
   const res = await fetch("/api/chat/message", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -44,31 +69,13 @@ export async function sendChatMessage(
   });
   if (!res.ok) throw new ChatApiError(res.status, await parseErrorDetail(res));
   const body = await res.json();
-  return { reply: body.reply, fields: mergeFields(fields, body.fields) };
-}
-
-type DurationTerm = MndaFormData["mndaTermDuration"];
-type PartyInfo = MndaFormData["partyOne"];
-
-function safeDuration(raw: unknown, fallback: DurationTerm): DurationTerm {
-  const candidate = raw as { duration?: unknown; unit?: unknown } | undefined;
-  const unit =
-    candidate?.unit === "day" || candidate?.unit === "month" || candidate?.unit === "year"
-      ? candidate.unit
-      : fallback.unit;
-  const duration =
-    typeof candidate?.duration === "number" ? clampDuration(candidate.duration) : fallback.duration;
-  return { duration, unit };
-}
-
-function safeParty(raw: unknown, fallback: PartyInfo): PartyInfo {
-  const candidate = raw as Record<string, unknown> | undefined;
   return {
-    printName: typeof candidate?.printName === "string" ? candidate.printName : fallback.printName,
-    title: typeof candidate?.title === "string" ? candidate.title : fallback.title,
-    company: typeof candidate?.company === "string" ? candidate.company : fallback.company,
-    noticeAddress:
-      typeof candidate?.noticeAddress === "string" ? candidate.noticeAddress : fallback.noticeAddress,
+    reply: body.reply,
+    fields: body.fields,
+    documentType: body.document_type ?? null,
+    documentTypeLabel: body.document_type_label ?? null,
+    suggestedDocumentType: body.suggested_document_type ?? null,
+    suggestedDocumentTypeLabel: body.suggested_document_type_label ?? null,
   };
 }
 
