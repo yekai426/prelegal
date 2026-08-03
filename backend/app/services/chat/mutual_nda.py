@@ -23,7 +23,7 @@ register(
     "mutual_nda",
     DocumentChatSpec(
         turn_schema=MndaChatTurn,
-        system_prompt=build_system_prompt("Mutual Non-Disclosure Agreement (Mutual NDA)", FIELD_GUIDE),
+        system_prompt=build_system_prompt("Mutual Non-Disclosure Agreement (Mutual NDA)", "mutual_nda", FIELD_GUIDE),
         greeting=GREETING,
     ),
 )

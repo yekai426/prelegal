@@ -42,6 +42,28 @@ export function emptyParty(): PartyInfo {
   return { printName: "", title: "", company: "", noticeAddress: "" };
 }
 
+export function safeDuration(raw: unknown, fallback: DurationTerm): DurationTerm {
+  const candidate = raw as { duration?: unknown; unit?: unknown } | undefined;
+  const unit =
+    candidate?.unit === "day" || candidate?.unit === "month" || candidate?.unit === "year"
+      ? candidate.unit
+      : fallback.unit;
+  const duration =
+    typeof candidate?.duration === "number" ? clampDuration(candidate.duration) : fallback.duration;
+  return { duration, unit };
+}
+
+export function safeParty(raw: unknown, fallback: PartyInfo): PartyInfo {
+  const candidate = raw as Record<string, unknown> | undefined;
+  return {
+    printName: typeof candidate?.printName === "string" ? candidate.printName : fallback.printName,
+    title: typeof candidate?.title === "string" ? candidate.title : fallback.title,
+    company: typeof candidate?.company === "string" ? candidate.company : fallback.company,
+    noticeAddress:
+      typeof candidate?.noticeAddress === "string" ? candidate.noticeAddress : fallback.noticeAddress,
+  };
+}
+
 // Mirrors the bracketed placeholder examples in templates/Mutual-NDA-coverpage.md.
 export function defaultFormData(): MndaFormData {
   return {

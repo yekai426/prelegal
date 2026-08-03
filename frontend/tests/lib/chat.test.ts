@@ -7,15 +7,35 @@ afterEach(() => {
 });
 
 describe("fetchGreeting", () => {
-  it("returns the reply on success", async () => {
+  it("returns the reply and document type on success", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ reply: "Hi there!" }),
+        json: async () => ({ reply: "Hi there!", document_type: null }),
       }),
     );
-    await expect(fetchGreeting()).resolves.toBe("Hi there!");
+    await expect(fetchGreeting()).resolves.toEqual({ reply: "Hi there!", documentType: null });
+  });
+
+  it("omits the document_type query param when null", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ reply: "Hi", document_type: null }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await fetchGreeting(null);
+    expect(fetchMock).toHaveBeenCalledWith("/api/chat/greeting");
+  });
+
+  it("includes the document_type query param when provided", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ reply: "Hi", document_type: "csa" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await fetchGreeting("csa");
+    expect(fetchMock).toHaveBeenCalledWith("/api/chat/greeting?document_type=csa");
   });
 
   it("throws ChatApiError with the parsed detail on failure", async () => {
@@ -36,15 +56,22 @@ describe("fetchGreeting", () => {
 });
 
 describe("sendChatMessage", () => {
-  it("posts the expected request body shape", async () => {
+  it("posts the expected request body shape and returns the raw server fields", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ reply: "ok", fields: {} }),
+      json: async () => ({
+        reply: "ok",
+        fields: { purpose: "testing" },
+        document_type: "mutual_nda",
+        document_type_label: "Mutual NDA",
+        suggested_document_type: null,
+        suggested_document_type_label: null,
+      }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
     const fields = defaultFormData();
-    await sendChatMessage([{ role: "user", content: "hi" }], fields);
+    const result = await sendChatMessage([{ role: "user", content: "hi" }], fields, "mutual_nda");
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/chat/message",
@@ -59,6 +86,27 @@ describe("sendChatMessage", () => {
       messages: [{ role: "user", content: "hi" }],
       fields,
     });
+    // sendChatMessage does NOT merge — it returns the raw fields for the
+    // caller to merge with the correct type-specific strategy.
+    expect(result).toEqual({
+      reply: "ok",
+      fields: { purpose: "testing" },
+      documentType: "mutual_nda",
+      documentTypeLabel: "Mutual NDA",
+      suggestedDocumentType: null,
+      suggestedDocumentTypeLabel: null,
+    });
+  });
+
+  it("sends a null document_type when not yet known", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ reply: "ok", fields: {}, document_type: null }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await sendChatMessage([{ role: "user", content: "hi" }], {}, null);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.document_type).toBeNull();
   });
 
   it("throws ChatApiError on a non-ok response", async () => {
@@ -71,7 +119,7 @@ describe("sendChatMessage", () => {
         json: async () => ({ detail: "assistant returned garbage" }),
       }),
     );
-    await expect(sendChatMessage([], defaultFormData())).rejects.toBeInstanceOf(ChatApiError);
+    await expect(sendChatMessage([], defaultFormData(), "mutual_nda")).rejects.toBeInstanceOf(ChatApiError);
   });
 });
 

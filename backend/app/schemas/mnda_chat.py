@@ -3,32 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-
-def _clamp_duration(value: object) -> int:
-    try:
-        as_int = int(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        return 1
-    return as_int if as_int >= 1 else 1
-
-
-class DurationFields(BaseModel):
-    duration: int = Field(default=1, ge=1, description="Whole number >= 1")
-    unit: Literal["day", "month", "year"] = "year"
-
-    @field_validator("duration", mode="before")
-    @classmethod
-    def _clamp(cls, v: object) -> int:
-        # Mirrors frontend clampDuration() — self-heal instead of failing the
-        # whole structured-output parse over a numeric quirk.
-        return _clamp_duration(v)
-
-
-class PartyFields(BaseModel):
-    printName: str = ""
-    title: str = ""
-    company: str = ""
-    noticeAddress: str = ""
+from app.schemas.common_fields import DurationFields, PartyFields
+from app.schemas.turn_base import ChatTurnBase, DocumentTypeSlug
 
 
 class MndaFields(BaseModel):
@@ -56,9 +32,9 @@ class MndaFields(BaseModel):
         return ""  # self-heal a malformed date rather than fail the turn
 
 
-class MndaChatTurn(BaseModel):
+class MndaChatTurn(ChatTurnBase):
     """The single combined structured-output schema for one MNDA chat turn —
     one LiteLLM call returns both, never two separate calls."""
 
-    reply: str = Field(description="Plain-prose reply shown verbatim in the chat UI. No markdown.")
-    fields: MndaFields = Field(description="The complete, merged field state after this turn.")
+    document_type: DocumentTypeSlug = "mutual_nda"
+    fields: MndaFields = Field(default_factory=MndaFields, description="The complete, merged field state after this turn.")
