@@ -38,3 +38,8 @@ def load_catalog() -> tuple[CatalogEntry, ...]:
 @lru_cache
 def catalog_by_key() -> dict[str, CatalogEntry]:
     return {entry.key: entry for entry in load_catalog()}
+
+
+def label_for(document_type: str) -> str | None:
+    entry = catalog_by_key().get(document_type)
+    return entry.name if entry else None

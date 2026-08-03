@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-The current implementation supports all 11 catalog document types via a freeform AI chat (LiteLLM/OpenRouter/Cerebras), which also handles requests for unsupported documents by suggesting the closest catalog match. A backend/auth foundation exists but user authentication and document persistence are not yet wired into the product. See "Implementation Status" below for what's actually built.
+The current implementation supports all 11 catalog document types via a freeform AI chat (LiteLLM/OpenRouter/Cerebras), which also handles requests for unsupported documents by suggesting the closest catalog match. Sign-in/sign-up is wired into the frontend, and signed-in users can save a generated document and revisit it later from a document history page. See "Implementation Status" below for what's actually built.
 
 ## Development process
 
@@ -95,6 +95,13 @@ Backend available at http://localhost:8000
 - Frontend: `DocumentCreator`/`ChatPanel` render the "Did you mean X?" suggestion and resend the conversation forced to that type on click; Mutual NDA keeps its original bespoke preview/PDF path, while the other 10 types share one generic path (`documentRegistry.ts`, `GenericPreview`, `GenericPdfDocument`) driven by field metadata mirroring each backend service's field guide
 - Mid-conversation document-type flips (user changes their mind partway through) are supported and carry over shared cover-page fields automatically
 
+### Completed (PL-7)
+- Frontend auth UI: `/signin`, `/signup` pages plus a shared `AuthForm`, backed by a `React Context` (`frontend/lib/AuthContext.tsx`, `AuthProvider`/`useAuth()`) that resolves session state once via `GET /api/auth/me` and is shared across the whole app (header sign-in state, the save flow, the document history page) — no route is hard-gated; the document-creator chat stays usable anonymously, and only saving a document prompts sign-in (inline, without losing the in-progress chat/fields state)
+- Document persistence: a new `documents` table (`backend/app/models/document.py`, FK to `users`) plus `POST/GET /api/documents` and `GET /api/documents/{id}`, all behind the existing `get_current_user` dependency, ownership-scoped, 404 (never 403) on someone else's document to avoid leaking existence — one row per explicit "Save to my documents" click, no update-in-place/versioning
+- A new `/documents` history page lists a signed-in user's saved documents and reopens one **read-only** by feeding its stored `{document_type, fields}` back into the same `GenericPreview`/`MndaPreview`/PDF components the live chat flow uses (via two new dispatcher components, `DocumentPreview.tsx`/`DocumentPdfButton.tsx`, extracted from what was previously inline in `DocumentCreator.tsx`) — no separate preview code, no edit path
+- Visual polish: the color scheme documented below is now actually implemented (Tailwind v4 `@theme` tokens in `globals.css`), applied to headings/submit buttons/nav; a `Header`/`Footer` were added (there was previously no site chrome at all — a single page with no nav); a "this is a draft, subject to legal review" disclaimer appears both on-screen and in every generated PDF
+- `next.config.ts` gained `trailingSlash: true` — required for any route beyond `/` to resolve correctly against FastAPI's `StaticFiles(html=True)` mount (verified against the actual Docker-built container, not just `next dev`)
+
 ### Not yet built
-- Document persistence (save/load/delete)
-- Frontend auth UI (login/signup pages, session-aware UI)
+- Deleting/updating a saved document
+- Pagination on the document list (fine at today's scale — the DB resets on every container restart)
